@@ -1,19 +1,16 @@
-from datetime import datetime
-import os
 import anvil.server
 from shotgun_api3 import Shotgun
 import shotgun_api3
-import sgtk
 from tank.authentication import ShotgunAuthenticator, set_shotgun_authenticator_support_web_login
+import os
+import time_off_requests
 
-SERVER_PATH = "https://mrwolf.shotgunstudio.com/"
-SCRIPT_NAME = "mw_python"
-SCRIPT_KEY = os.getenv("MW_PYTHON_SHOTGRID")
 
-anvil_uplink_key = os.getenv("ANVIL_UPLINK_KEY")
+SERVER_PATH = os.getenv("MW_PYTHON_SHOTGRID_SERVER")
+SCRIPT_NAME = os.getenv("MW_PYTHON_SHOTGRID_NAME")
+SCRIPT_KEY = os.getenv("MW_PYTHON_SHOTGRID_KEY")
 
-anvil.server.connect(anvil_uplink_key)
-
+ANVIL_UPLINK_KEY = os.getenv("ANVIL_UPLINK_KEY")
 
 @anvil.server.callable
 def get_shotgrid_user():
@@ -31,11 +28,12 @@ def get_shotgrid_user():
 
     sg = shotgun_api3.Shotgun(SERVER_PATH, SCRIPT_NAME, SCRIPT_KEY)
 
-    user_data = sg.find_one('HumanUser', [['login', 'is', user_login]], ['id', 'name'])
-    user_id = user_data['id']
-    user_name = user_data['name']
+    fields = ['id', 'name', 'email', 'permission_rule_set', 'firstname', 'lastname', 'sg_office_code',
+              'sg_software' , 'sg_mw_anvil_alignment']
 
-    return user_login, user_id, user_name
+    user_data = sg.find_one('HumanUser', [['login', 'is', user_login]], fields)
+
+    return user_data
 
 @anvil.server.callable
 def get_shotgrid_projects():
@@ -51,41 +49,24 @@ def get_shotgrid_projects():
 
     return project_list
 
-@anvil.server.callable()
-def submit_time_off_request(user_id, start_date, end_date, unpaid_days, paid_days, project_id, note):
-    sg = shotgun_api3.Shotgun(SERVER_PATH, SCRIPT_NAME, SCRIPT_KEY)
+def get_sg_status_icons(sg):
+    if sg is None:
+        sg = shotgun_api3.Shotgun(SERVER_PATH, SCRIPT_NAME, SCRIPT_KEY)
 
-    vacation = True
-    print(user_id, start_date, end_date, unpaid_days, paid_days, project_id, note)
+    fields = ['bg_color', 'icon', 'code', 'name', 'sg_status_list_map_icon', 'data', 'image', 'thumbnail_path', 'thumbnail', 'image_data', 'entity', 'thumb']
+    statuses = sg.find('Status', [], fields)
 
-    if paid_days is None:
-        paid_days = 0.0
-
-    else:
-        paid_days = float(paid_days)
-
-    if unpaid_days is None:
-        unpaid_days = 0.0
-
-    else:
-        unpaid_days = float(paid_days)
-
-    booking_data = {
-        # 'project': {'type': 'Project', 'id': project_id},  # Replace with your project ID
-        'user': {'type': 'HumanUser', 'id': user_id},  # Replace with your resource (user) ID
-        'start_date': start_date,
-        'end_date': end_date,
-        'sg_unpaid_days_requested': unpaid_days,
-        'sg_paid_days_requested': paid_days,
-        'note': note,
-        'vacation': vacation
-    }
-
-    sg.create('Booking', booking_data)
-
-    return "Time Off Request Submitted!"
+    return statuses
 
 if __name__ == "__main__":
     # submit_time_off_request(129, "2024-10-17", "2024-10-17", 4, 4, 1386, "TEST CHAD SUBMISSION")
-    # get_shotgrid_user()
+
+    books = time_off_requests.load_time_off_requests(129, 'cfrm')
+    sorted_data = sorted(books, key=lambda x: x['created_at_object'])
+    for book in books:
+        print(book['created_at'])
+
+    # get_sg_status_icons(sg=None)
+
+    anvil.server.connect(ANVIL_UPLINK_KEY)
     anvil.server.wait_forever()
