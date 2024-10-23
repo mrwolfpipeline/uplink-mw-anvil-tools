@@ -3,9 +3,9 @@ import shotgun_api3
 import uplink
 import datetime
 
-machine_name = "CHAD NEPTUNE"
+machine_name = "NEPTUNE"
 
-@anvil.server.callable("example_func" + machine_name )
+@anvil.server.callable("launch_" + machine_name )
 def example_func():
   print("CALLING CHAD NEPTUNE")
   return
