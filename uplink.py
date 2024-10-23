@@ -4,7 +4,8 @@ import shotgun_api3
 from tank.authentication import ShotgunAuthenticator, set_shotgun_authenticator_support_web_login
 import os
 import time_off_requests
-
+import util_sg
+import distributed
 
 SERVER_PATH = os.getenv("MW_PYTHON_SHOTGRID_SERVER")
 SCRIPT_NAME = os.getenv("MW_PYTHON_SHOTGRID_NAME")
@@ -61,12 +62,17 @@ def get_sg_status_icons(sg):
 if __name__ == "__main__":
     # submit_time_off_request(129, "2024-10-17", "2024-10-17", 4, 4, 1386, "TEST CHAD SUBMISSION")
 
-    books = time_off_requests.load_time_off_requests(129, 'cfrm')
-    sorted_data = sorted(books, key=lambda x: x['created_at_object'])
-    for book in books:
-        print(book['created_at'])
+    # books = time_off_requests.load_time_off_requests(129, 'cfrm')
+    # sorted_data = sorted(books, key=lambda x: x['created_at_object'])
+    # for book in books:
+    #     print(book['created_at'])
 
     # get_sg_status_icons(sg=None)
+    # entity = 'Project'
+    # filters = [['sg_status', 'is', 'active']]
+    # fields = ['name', 'sg_mw_comp_lead', 'sg_mw_producer']
+    #
+    # find = util_sg.sg_find("Project", filters, fields)
 
     anvil.server.connect(ANVIL_UPLINK_KEY)
     anvil.server.wait_forever()
